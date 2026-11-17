@@ -1,0 +1,50 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_deer/setting/provider/theme_provider.dart';
+import 'package:flutter_deer/shop/page/freight_config_page.dart';
+import 'package:flutter_deer/shop/page/input_text_page.dart';
+import 'package:flutter_deer/shop/page/message_page.dart';
+import 'package:flutter_deer/shop/page/select_address_page.dart';
+import 'package:flutter_deer/shop/page/shop_page.dart';
+import 'package:flutter_deer/shop/page/shop_setting_page.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
+
+import '../fake_webview_platform.dart';
+
+void main() {
+
+  // AddressSelectPage 在 initState 中创建 WebViewController，测试环境需注册假平台实现。
+  WebViewPlatform.instance = FakeWebViewPlatform();
+
+  final Map<String, Widget> map = <String, Widget>{};
+  map['shop_page'] = const ShopPage(isAccessibilityTest: true,);
+  map['shop_setting_page'] = const ShopSettingPage();
+  map['select_address_page'] = const AddressSelectPage();
+  map['message_page'] = const MessagePage();
+  map['input_text_page'] = const InputTextPage(title: '测试', hintText: '输入测试内容');
+  map['freight_config_page'] = const FreightConfigPage();
+
+  group('shop => 检测页面可点击目标大小是否大于44 * 44', () {
+    final ThemeData themeData = ThemeProvider().getTheme();
+    map.forEach((name, page) {
+      testWidgets(name, (WidgetTester tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+        await tester.pumpWidget(MaterialApp(home: page, theme: themeData,));
+        await expectLater(tester, meetsGuideline(iOSTapTargetGuideline));
+        handle.dispose();
+      }, skip: name == 'select_address_page' || name == 'freight_config_page');
+    });
+  });
+
+  group('shop => 检测页面可点击目标是否都有语义', () {
+    final ThemeData themeData = ThemeProvider().getTheme();
+    map.forEach((name, page) {
+      testWidgets(name, (WidgetTester tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
+        await tester.pumpWidget(MaterialApp(home: page, theme: themeData,));
+        await expectLater(tester, meetsGuideline(labeledTapTargetGuideline));
+        handle.dispose();
+      });
+    });
+  });
+}
